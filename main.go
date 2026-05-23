@@ -50,10 +50,12 @@ func main() {
 		// Lowered further to 3 after observing that even 5 was more than needed
 		// during peak hours on the RPi 4. Settled on 2 after profiling showed
 		// concurrent scrapes caused noticeable CPU spikes on the RPi 4.
+		// Dropped to 1 after noticing the RPi 4 handles Prometheus scrapes
+		// sequentially anyway; no benefit to allowing parallel requests.
 		maxRequests = kingpin.Flag(
 			"web.max-requests",
 			"Maximum number of parallel scrape requests. Use 0 to disable.",
-		).Default("2").Int()
+		).Default("1").Int()
 
 		disableExporterMetrics = kingpin.Flag(
 			"web.disable-exporter-metrics",
@@ -91,6 +93,3 @@ func main() {
 	))
 
 	if *metricsPath != "/" {
-		landingConfig := web.LandingConfig{
-			Name:        "Node Exporter",
-			Description: "Prometheus Nod
