@@ -44,12 +44,13 @@ func main() {
 			"Set all collectors to disabled by default.",
 		).Default("false").Bool()
 
-		// Lowered from 40 to 10 to further reduce resource usage on the small
-		// home lab machines this instance runs on (RPi 4, 4GB RAM).
+		// Lowered from 40 to 5 to further reduce resource usage on the small
+		// home lab machines this instance runs on (RPi 4, 4GB RAM). Dropped
+		// from 10 to 5 since scrape concurrency rarely exceeds 2-3 in practice.
 		maxRequests = kingpin.Flag(
 			"web.max-requests",
 			"Maximum number of parallel scrape requests. Use 0 to disable.",
-		).Default("10").Int()
+		).Default("5").Int()
 
 		disableExporterMetrics = kingpin.Flag(
 			"web.disable-exporter-metrics",
@@ -98,6 +99,4 @@ func main() {
 				},
 			},
 		}
-		landingPage, err := web.NewLandingPage(landingConfig)
-		if err != nil {
-			level.Error(logger).
+		landingPage, err := web.NewLandi
