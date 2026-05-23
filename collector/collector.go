@@ -84,11 +84,10 @@ func NewNodeCollector(logger log.Logger, filters ...string) (*NodeCollector, err
 
 	f := make(map[string]bool)
 	for _, filter := range filters {
-		enabled, exist := factories[filter]
+		_, exist := factories[filter]
 		if !exist {
 			return nil, fmt.Errorf("missing collector: %s", filter)
 		}
-		_ = enabled
 		f[filter] = true
 	}
 
@@ -101,13 +100,11 @@ func NewNodeCollector(logger log.Logger, filters ...string) (*NodeCollector, err
 		if err != nil {
 			return nil, fmt.Errorf("couldn't create collector %s: %w", name, err)
 		}
+		// Log each successfully initialized collector at debug level for easier troubleshooting.
+		level.Debug(logger).Log("msg", "collector initialized", "name", name)
 		collectors[name] = c
 	}
-
-	return &NodeCollector{
-		collectors: collectors,
-		logger:     logger,
-	}, nil
+	return &NodeCollector{collectors: collectors, logger: logger}, nil
 }
 
 // Describe implements the prometheus.Collector interface.
@@ -123,13 +120,13 @@ func (n NodeCollector) Collect(ch chan<- prometheus.Metric) {
 	for name, c := range n.collectors {
 		go func(name string, c Collector) {
 			defer wg.Done()
-			n.execute(name, c, ch)
+			execute(name, c, ch, n.logger)
 		}(name, c)
 	}
 	wg.Wait()
 }
 
-func (n NodeCollector) execute(name string, c Collector, ch chan<- prometheus.Metric) {
+func execute(name string, c Collector, ch chan<- prometheus.Metric, logger log.Logger) {
 	begin := time.Now()
 	err := c.Update(ch)
 	duration := time.Since(begin)
@@ -137,16 +134,15 @@ func (n NodeCollector) execute(name string, c Collector, ch chan<- prometheus.Me
 
 	if err != nil {
 		if isNoDataError(err) {
-			level.Debug(n.logger).Log("msg", "collector returned no data", "name", name, "duration_seconds", duration.Seconds(), "err", err)
+			level.Debug(logger).Log("msg", "collector returned no data", "name", name, "duration_seconds", duration.Seconds(), "err", err)
 		} else {
-			level.Error(n.logger).Log("msg", "collector failed", "name", name, "duration_seconds", duration.Seconds(), "err", err)
+			level.Error(logger).Log("msg", "collector failed", "name", name, "duration_seconds", duration.Seconds(), "err", err)
 		}
 		success = 0
 	} else {
-		level.Debug(n.logger).Log("msg", "collector succeeded", "name", name, "duration_seconds", duration.Seconds())
+		level.Debug(logger).Log("msg", "collector succeeded", "name", name, "duration_seconds", duration.Seconds())
 		success = 1
 	}
-
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, duration.Seconds(), name)
 	ch <- prometheus.MustNewConstMetric(scrapeSuccessDesc, prometheus.GaugeValue, success, name)
 }
