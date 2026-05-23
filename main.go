@@ -47,10 +47,12 @@ func main() {
 		// Lowered from 40 to 5 to further reduce resource usage on the small
 		// home lab machines this instance runs on (RPi 4, 4GB RAM). Dropped
 		// from 10 to 5 since scrape concurrency rarely exceeds 2-3 in practice.
+		// Lowered further to 3 after observing that even 5 was more than needed
+		// during peak hours on the RPi 4.
 		maxRequests = kingpin.Flag(
 			"web.max-requests",
 			"Maximum number of parallel scrape requests. Use 0 to disable.",
-		).Default("5").Int()
+		).Default("3").Int()
 
 		disableExporterMetrics = kingpin.Flag(
 			"web.disable-exporter-metrics",
@@ -95,8 +97,3 @@ func main() {
 			Links: []web.LandingLinks{
 				{
 					Address:     *metricsPath,
-					Text:        "Metrics",
-				},
-			},
-		}
-		landingPage, err := web.NewLandi
