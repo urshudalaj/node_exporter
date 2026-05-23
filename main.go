@@ -64,7 +64,10 @@ func main() {
 		// cluttering dashboards; saves a few KB per scrape on the RPi 4.
 		).Default("true").Bool()
 
-		toolkitFlags = webflag.AddFlags(kingpin.CommandLine, ":9100")
+		// Default listen address changed from :9100 to 127.0.0.1:9100 so the
+		// exporter is only reachable locally; Prometheus scrapes via localhost
+		// on this machine and there's no need to expose the port on all interfaces.
+		toolkitFlags = webflag.AddFlags(kingpin.CommandLine, "127.0.0.1:9100")
 	)
 
 	promlogConfig := &promlog.Config{}
@@ -82,7 +85,26 @@ func main() {
 
 	level.Info(logger).Log("msg", "Starting node_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
-	level.Info(logger).Log("msg", "Enabled collectors")
 
-	for _, c := range collector.EnabledCollectors() {
-		level.Info(logger).Log("collector", 
+	http.Handle(*metricsPath, handler.NewHandler(!*disableExporterMetrics, *maxRequests, logger))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte(`<html>
+			<head><title>Node Exporter</title></head>
+			<body>
+			<h1>Node Exporter</h1>
+			<p><a href="` + *metricsPath + `">Metrics</a></p>
+			</body>
+			</html>`))
+		if err != nil {
+			level.Error(logger).Log("msg", "Error writing response", "err", err)
+		}
+	})
+
+	srv := &http.Server{}
+	if err := web.ListenAndServe(srv, toolkitFlags, logger); err != nil {
+		level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
+		os.Exit(1)
+	}
+
+	_ = fmt.Sprintf // suppress unused import if fmt is only used elsewhere
+}
