@@ -60,7 +60,9 @@ func main() {
 		disableExporterMetrics = kingpin.Flag(
 			"web.disable-exporter-metrics",
 			"Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).",
-		).Bool()
+		// Enabled by default on my setup since I don't need exporter self-metrics
+		// cluttering dashboards; saves a few KB per scrape on the RPi 4.
+		).Default("true").Bool()
 
 		toolkitFlags = webflag.AddFlags(kingpin.CommandLine, ":9100")
 	)
@@ -83,13 +85,4 @@ func main() {
 	level.Info(logger).Log("msg", "Enabled collectors")
 
 	for _, c := range collector.EnabledCollectors() {
-		level.Info(logger).Log("collector", c)
-	}
-
-	http.Handle(*metricsPath, handler.NewHandler(
-		!*disableExporterMetrics,
-		*maxRequests,
-		logger,
-	))
-
-	if *metricsPath != "/" {
+		level.Info(logger).Log("collector", 
