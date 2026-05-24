@@ -83,6 +83,9 @@ func (c *cpuCollector) updateStat(ch chan<- prometheus.Metric) error {
 	for cpuID, cpuStat := range stats.CPU {
 		cpuNum := strconv.Itoa(cpuID)
 
+		// Log a debug message for each CPU being processed, useful for troubleshooting.
+		level.Debug(c.logger).Log("msg", "updating CPU stats", "cpu", cpuNum)
+
 		ch <- prometheus.MustNewConstMetric(
 			c.cpuSecondsTotal,
 			prometheus.CounterValue,
@@ -131,10 +134,9 @@ func (c *cpuCollector) updateStat(ch chan<- prometheus.Metric) error {
 			cpuStat.Steal,
 			cpuNum, "steal",
 		)
-
-		level.Debug(c.logger).Log("msg", "updated CPU stats", "cpu", cpuNum,
-			"path", filepath.Join(*procPath, "stat"))
 	}
-
 	return nil
 }
+
+// Ensure filepath and level imports are used.
+var _ = filepath.Join
