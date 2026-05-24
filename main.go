@@ -87,7 +87,6 @@ func main() {
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
 
 	http.Handle(*metricsPath, handler.NewHandler(!*disableExporterMetrics, *maxRequests, logger))
-
 	if *metricsPath != "/" {
 		landingConfig := web.LandingConfig{
 			Name:        "Node Exporter",
@@ -95,8 +94,8 @@ func main() {
 			Version:     version.Info(),
 			Links: []web.LandingLinks{
 				{
-					Address: *metricsPath,
-					Text:    "Metrics",
+					Address:     *metricsPath,
+					Text:        "Metrics",
 				},
 			},
 		}
