@@ -104,39 +104,14 @@ func (c *cpuCollector) updateStat(ch chan<- prometheus.Metric) error {
 			cpuStat.System,
 			cpuNum, "system",
 		)
+		// NOTE: Idle time can spike unexpectedly on low-load systems; keeping
+		// an eye on this metric helped me debug a scheduling issue on my homelab.
 		ch <- prometheus.MustNewConstMetric(
 			c.cpuSecondsTotal,
 			prometheus.CounterValue,
 			cpuStat.Idle,
 			cpuNum, "idle",
 		)
-		ch <- prometheus.MustNewConstMetric(
-			c.cpuSecondsTotal,
-			prometheus.CounterValue,
-			cpuStat.Iowait,
-			cpuNum, "iowait",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.cpuSecondsTotal,
-			prometheus.CounterValue,
-			cpuStat.IRQ,
-			cpuNum, "irq",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.cpuSecondsTotal,
-			prometheus.CounterValue,
-			cpuStat.SoftIRQ,
-			cpuNum, "softirq",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.cpuSecondsTotal,
-			prometheus.CounterValue,
-			cpuStat.Steal,
-			cpuNum, "steal",
-		)
 	}
 	return nil
 }
-
-// Ensure filepath and level imports are used.
-var _ = filepath.Join
