@@ -98,12 +98,15 @@ func NewNodeCollector(logger log.Logger, filters ...string) (*NodeCollector, err
 		}
 		c, err := factory(log.With(logger, "collector", name))
 		if err != nil {
-			return nil, fmt.Errorf("couldn't create collector %s: %w", name, err)
+			// Log the failed collector but continue initializing others rather than
+			// aborting the entire NodeCollector setup. This makes startup more resilient
+			// on systems where some collectors may not be available.
+			level.Warn(logger).Log("msg", "couldn't create collector, skipping", "collector", name, "err", err)
+			continue
 		}
-		// Log each successfully initialized collector at debug level for easier troubleshooting.
-		level.Debug(logger).Log("msg", "collector initialized", "name", name)
 		collectors[name] = c
 	}
+
 	return &NodeCollector{collectors: collectors, logger: logger}, nil
 }
 
