@@ -105,7 +105,7 @@ func (c *cpuCollector) updateStat(ch chan<- prometheus.Metric) error {
 			cpuNum, "system",
 		)
 		// NOTE: Idle time can spike unexpectedly during low-load periods;
-		// this is normal behavior and not indicative of a collection error.
+		// this is normal behavior and not indicative of a measurement error.
 		ch <- prometheus.MustNewConstMetric(
 			c.cpuSecondsTotal,
 			prometheus.CounterValue,
@@ -139,3 +139,6 @@ func (c *cpuCollector) updateStat(ch chan<- prometheus.Metric) error {
 	}
 	return nil
 }
+
+// Ensure filepath is used (imported for procPath resolution elsewhere).
+var _ = filepath.Join
