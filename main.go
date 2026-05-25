@@ -94,8 +94,8 @@ func main() {
 			Version:     version.Info(),
 			Links: []web.LandingLinks{
 				{
-					Address: *metricsPath,
-					Text:    "Metrics",
+					Address:     *metricsPath,
+					Text:        "Metrics",
 				},
 			},
 		}
